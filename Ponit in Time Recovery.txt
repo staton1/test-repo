@@ -1,0 +1,89 @@
+psql -c "select * from pg_stat_archiver"
+
+1. u need a base backup (pg_basebackup -D /var/lib/pgsql/11/backups
+select pg_switch_wal(); 
+2 stop the cluster and delete everything in data director
+3. ALTER SYSTEM SET archive_mode = on;
+4. wal_level = replica';
+
+   ALTER SYSTEM SET archive_command TO 'cp %p /var/lib/pgsql/11/archive/%f';
+   ALTER SYSTEM SET max_wal_size = '1GB';
+   ALTER SYSTEM SET min_wal_size = '80MB';
+4. archive_command
+3. shut down cluster and delete  --cp -R /var/lib/pgsql/11/backups/*   am in my data directory
+4. create a recovery.conf file toch recovery.conf (it is telling postgre that u are in a recovery state)
+DELETE FROM ITECH.UNIVERSITY WHERE ID IN (SELECT ID FROM ITECH.UNIVERSITY LIMIT 5);
+
+ 2023-03-30 14:55:09 CDT
+2023-03-30 15:25:51.509765-05 dont copy the exct time u may copy d drop too
+
+set log statement to all to see all the ddl statement
+Point in Time Recovery  (select pg_current_wal_lsn(),pg_wafile_name(pg_current_wal_lsn()); )
+	point in time recovery 
+
+RPO : Recovery point objective (meaning the amount of data lost the company can acommodate crash at 10 am your you can recovery from 9;59 am
+
+RTO : Recovery Time objective (meaning the amount of down time lost the company will accomandate your your cluser went down at 10am how much time do you have to restore
+if your company RTO is 20miunte u have max of 20 minute to bring it backup
+
+point in time recovery can be done in 3 ways
+
+1. it can be done up to a specific time in that case the parameter we will use is (recovery_target_time)
+2. it can be done upto a specific LSN Logical sequence number in this case we will use (recovery_target_lsn)
+3. it can be done up to a specific restore point (recovery_target_name) the most common is recovery target tim
+
+
+there are condition to meet before you can perform point in time recovery
+
+1. your cluster must be in archive log mode
+2. you must have a valid pg_basebackup
+
+
+STEPS
+select pg_start_backup('lable')(); and take a pgbasebackup
+1. Check your log to know exactly at what time the cluster went down if your cluser went down at 10:02am you will know that recovery target time can be 10:01am
+2. when you already know the time your cluser went down you need to delete everything from the data directory
+3. restore from the backup location to the data directory
+4. you will have to create a recovery.conf file.(the recovery.conf file tells the cluster that you are in recovery state)
+5. in the recovery.conf file you will specify 
+       restore_command: is pointing to the location of your archive logs
+       recovery_target_time : is the date and time you want to recover from
+       recovery_target_action: specify the action you want your server to take when recovery is done. 
+
+for this you have 
+PAUSE : If you specify recovery action to be pause your server will start up in ready only mode
+PROMOTE: If you specify your server to be promote your server will be in read and write mode.
+for PROMOTE and PAUSE the recovery.conf will rename itself to recovery.done when recovery is completed
+
+DISABLE;if you specify your action to be disable your server will shutdown after recovery and the recovery will not rename itself you will have to rename manuel after recovery is done
+
+If your cluser startup in read only mode, you need to issue select pg_wal_replay_resume(); to open in read and write mode.
+
+your cluster will startup and recovery is complete.
+
+stop the server
+select pg_switch-wal;
+we can ask postgres to always take log of ddl (log_statement ='all')
+\! date
+create a recovery.conf file : it is telling postgres that u are in recovery state.
+
+restore_command = 'cp %p /var/lib/pgsql/11/archive/%f'
+standby_mode = 'on'
+recovery_target_time ='2023-03-30 16:53:18.530'
+recovery_target_action ='promote'
+recovery_target_inclusive ='on'
+
+standby_mode = 'on'
+primary_conninfo = 'host=PRIMARY_HOST port=PRIMARY_PORT user=REPLICATION_USER password=REPLICATION_PASSWORD'
+restore_command = 'cp /path/to/wal/%f %p'
+recovery_target_time = 'YYYY-MM-DD HH:MI:SS'
+# or
+recovery_target_xid = 'TRANSACTION_ID'
+
+
+
+
+
+
+
+
